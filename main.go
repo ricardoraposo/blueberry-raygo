@@ -14,14 +14,18 @@ func main() {
 	defer rl.CloseWindow()
 	rl.SetTargetFPS(60)
 
+	// Camera stuff
+	initP := rl.Vector2{X: float32(width) / 2, Y: float32(heigth) / 2}
+	camera := rl.NewCamera2D(initP, initP, 0, 1.0)
+
 	// Music stuff
 	rl.InitAudioDevice()
 	music := rl.LoadMusicStream("crab_rave.mp3")
 	rl.PlayMusicStream(music)
 
-	// Camera stuff
-	initP := rl.Vector2{X: float32(width) / 2, Y: float32(heigth) / 2}
-	camera := rl.NewCamera2D(initP, initP, 0, 1.0)
+	// Wave stuff
+	wave := rl.LoadWave("crab_rave.mp3")
+	allSamples := rl.LoadWaveSamples(wave)
 
 	circleRadius := 2 * math.Pi
 	amplitude := 200.0
@@ -31,8 +35,23 @@ func main() {
 
 	var pathPoints []rl.Vector2
 	var pathReversedPoints []rl.Vector2
+
+	average := float32(0)
+	step := 750
+	i := 0
+	// Event loop start
 	for !rl.WindowShouldClose() {
 		rl.UpdateMusicStream(music)
+
+		slice := allSamples[i : i+step]
+		sum := float32(0.0)
+		for k := 0; k < len(slice); k++ {
+			sum = sum + slice[k]
+		}
+
+		average = sum / float32(len(slice))
+
+		i = i + step
 
 		if rl.IsKeyPressed(rl.KeySpace) {
 			if rl.IsMusicStreamPlaying(music) {
@@ -46,7 +65,8 @@ func main() {
 
 		// circleX := int32(2 * amplitude * math.Sin(angle))
 		circleX := int32(amplitude * angle)
-		circleY := int32(-amplitude * math.Sin(angle*10))
+		circleY := average
+		// circleY := int32(-amplitude * math.Sin(angle*10))
 		angle += speed
 
 		rl.BeginDrawing()
@@ -57,19 +77,19 @@ func main() {
 		rl.DrawLineEx(rl.Vector2{X: 0, Y: float32(heigth / 2)}, rl.Vector2{X: float32(width), Y: float32(heigth / 2)}, 2, rl.Black)
 
 		// Draws the line that will follow the circle
-		rls := rl.Vector2{X: float32(width/2), Y: float32(heigth / 2)}
-		rle := rl.Vector2{X: float32(width/2), Y: float32(heigth/2)}
+		rls := rl.Vector2{X: float32(width / 2), Y: float32(heigth / 2)}
+		rle := rl.Vector2{X: float32(width / 2), Y: float32(heigth / 2)}
 		// lls := rl.Vector2{X: float32(width/2 - circleX), Y: float32(heigth / 2)}
 		// lle := rl.Vector2{X: float32(width/2 - circleX), Y: float32(heigth/2 - circleY)}
 		rl.DrawLineEx(rls, rle, 3, rl.Red)
 		// rl.DrawLineEx(lls, lle, 3, rl.Red)
 
 		// Current position of the balls
-		cp := rl.Vector2{X: float32(width/2 + circleX), Y: float32(heigth/2 + circleY)}
-		crp := rl.Vector2{X: float32(width/2 - circleX), Y: float32(heigth/2 - circleY)}
+		cp := rl.Vector2{X: float32(width/2 + circleX), Y: float32(heigth/2) * circleY}
+		crp := rl.Vector2{X: float32(width/2 - circleX), Y: float32(heigth/2) - circleY}
 
-    rl.BeginMode2D(camera)
-    camera.Target = cp
+		rl.BeginMode2D(camera)
+		camera.Target = cp
 
 		pathPoints = append(pathPoints, cp)
 		pathReversedPoints = append(pathReversedPoints, crp)
