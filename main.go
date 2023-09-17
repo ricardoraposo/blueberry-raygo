@@ -7,25 +7,46 @@ import (
 )
 
 func main() {
+	// Setup window
 	width := int32(1200)
 	heigth := int32(800)
 	rl.InitWindow(width, heigth, "Blueberry Raygo")
 	defer rl.CloseWindow()
-
 	rl.SetTargetFPS(60)
+
+	// Music stuff
+	rl.InitAudioDevice()
+	music := rl.LoadMusicStream("crab_rave.mp3")
+	rl.PlayMusicStream(music)
+
+	// Camera stuff
+	initP := rl.Vector2{X: float32(width) / 2, Y: float32(heigth) / 2}
+	camera := rl.NewCamera2D(initP, initP, 0, 1.0)
 
 	circleRadius := 2 * math.Pi
 	amplitude := 200.0
-	speed := 0.01
+	acc := 0.01
+	speed := acc
 	angle := 0.0
 
 	var pathPoints []rl.Vector2
 	var pathReversedPoints []rl.Vector2
 	for !rl.WindowShouldClose() {
-		// circleX := int32(-2 * amplitude * math.Sin(angle))
+		rl.UpdateMusicStream(music)
+
+		if rl.IsKeyPressed(rl.KeySpace) {
+			if rl.IsMusicStreamPlaying(music) {
+				rl.PauseMusicStream(music)
+				speed = 0
+			} else {
+				rl.ResumeMusicStream(music)
+				speed = acc
+			}
+		}
+
+		// circleX := int32(2 * amplitude * math.Sin(angle))
 		circleX := int32(amplitude * angle)
-		circleY := int32(-amplitude * math.Sin(angle*7))
-		// circleY := int32(math.Sin(float64(circleX)) * amplitude / 3)
+		circleY := int32(-amplitude * math.Sin(angle*10))
 		angle += speed
 
 		rl.BeginDrawing()
@@ -36,16 +57,19 @@ func main() {
 		rl.DrawLineEx(rl.Vector2{X: 0, Y: float32(heigth / 2)}, rl.Vector2{X: float32(width), Y: float32(heigth / 2)}, 2, rl.Black)
 
 		// Draws the line that will follow the circle
-		rls := rl.Vector2{X: float32(width/2 + circleX), Y: float32(heigth / 2)}
-		rle := rl.Vector2{X: float32(width/2 + circleX), Y: float32(heigth/2 + circleY)}
-		lls := rl.Vector2{X: float32(width/2 - circleX), Y: float32(heigth / 2)}
-		lle := rl.Vector2{X: float32(width/2 - circleX), Y: float32(heigth/2 - circleY)}
+		rls := rl.Vector2{X: float32(width/2), Y: float32(heigth / 2)}
+		rle := rl.Vector2{X: float32(width/2), Y: float32(heigth/2)}
+		// lls := rl.Vector2{X: float32(width/2 - circleX), Y: float32(heigth / 2)}
+		// lle := rl.Vector2{X: float32(width/2 - circleX), Y: float32(heigth/2 - circleY)}
 		rl.DrawLineEx(rls, rle, 3, rl.Red)
-		rl.DrawLineEx(lls, lle, 3, rl.Red)
+		// rl.DrawLineEx(lls, lle, 3, rl.Red)
 
-    // Current position of the balls
+		// Current position of the balls
 		cp := rl.Vector2{X: float32(width/2 + circleX), Y: float32(heigth/2 + circleY)}
 		crp := rl.Vector2{X: float32(width/2 - circleX), Y: float32(heigth/2 - circleY)}
+
+    rl.BeginMode2D(camera)
+    camera.Target = cp
 
 		pathPoints = append(pathPoints, cp)
 		pathReversedPoints = append(pathReversedPoints, crp)
@@ -61,5 +85,6 @@ func main() {
 		rl.EndDrawing()
 	}
 
+	rl.CloseAudioDevice()
 	rl.CloseWindow()
 }
